@@ -1,43 +1,39 @@
 package com.sof3062.config;
 
+import javax.sql.DataSource;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.sof3062.dao.UserDAO;
+import com.sof3062.security.DaoUserDetailsManager;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+        UserDAO dao;
+
+        public SecurityConfig(UserDAO userDAO) {
+                this.dao = userDAO;
+        }
+
         @Bean
         public PasswordEncoder passwordEncoder() {
                 return PasswordEncoderFactories.createDelegatingPasswordEncoder();
         }
 
         @Bean
-        public UserDetailsService userDetailsService(PasswordEncoder pe) {
-                String encoded = pe.encode("123");
-
-                return new InMemoryUserDetailsManager(
-                                createUser("admin@gmail.com", encoded, "ADMIN"),
-                                createUser("user@gmail.com", encoded, "USER"),
-                                createUser("both@gmail.com", encoded, "ADMIN", "USER"));
-        }
-
-        private UserDetails createUser(String username, String password, String... roles) {
-                return User
-                                .withUsername(username.toLowerCase())
-                                .password(password)
-                                .roles(roles)
-                                .build();
+        public UserDetailsService userDetailsService() {
+                return new DaoUserDetailsManager(dao);
         }
 
         @Bean
@@ -55,7 +51,6 @@ public class SecurityConfig {
                                                 .loginProcessingUrl("/login/check")
                                                 .defaultSuccessUrl("/login/success", true)
                                                 .failureUrl("/login/failure")
-                                                .permitAll()
                                                 .usernameParameter("username")
                                                 .passwordParameter("password"))
                                 .rememberMe(rm -> rm
