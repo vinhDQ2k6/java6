@@ -1,21 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-          <groupId>com.sof3062</groupId>
-          <artifactId>java6</artifactId>
-          <version>0.0.1-SNAPSHOT</version>
+        <groupId>com.sof3062</groupId>
+        <artifactId>java6</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>com.sof3062</groupId>
     <artifactId>lab2</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-    </properties>
-
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>11.16.0</version>
+                <configuration>
+                    <url>jdbc:mysql://localhost:3306/j6security?useSSL=false&amp;serverTimezone=UTC</url>
+                    <user>root</user>
+                    <password>root</password>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
