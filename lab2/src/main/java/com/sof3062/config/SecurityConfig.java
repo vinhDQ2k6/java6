@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import com.sof3062.dao.UserDAO;
 import com.sof3062.security.DaoUserDetailsManager;
 
+@SuppressWarnings("unused")
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
