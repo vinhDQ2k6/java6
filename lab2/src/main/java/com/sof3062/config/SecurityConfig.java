@@ -32,6 +32,19 @@ public class SecurityConfig {
                 return PasswordEncoderFactories.createDelegatingPasswordEncoder();
         }
 
+        // @Bean
+        // public UserDetailsService userDetailsService(DataSource dataSource) {
+        // String userSQL = "SELECT username, password, enabled FROM users WHERE
+        // username = ?";
+        // String roleSQL = "SELECT u.username, ur.roles FROM users u INNER JOIN
+        // user_roles ur ON u.username = ur.username WHERE u.username = ?";
+        // JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
+        // manager.setUsersByUsernameQuery(userSQL);
+        // manager.setAuthoritiesByUsernameQuery(roleSQL);
+
+        // return manager;
+        // }
+
         @Bean
         public UserDetailsService userDetailsService() {
                 return new DaoUserDetailsManager(dao);
