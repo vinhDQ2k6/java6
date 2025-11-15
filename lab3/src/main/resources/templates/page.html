@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title th:text="${title} ?: 'Page'">Page</title>
+  </head>
+  <body>
+    <a href="/">Home</a>
+    <a href="/poly/url0">url0</a>
+    <a href="/poly/url1">url1</a>
+    <a href="/poly/url2">url2</a>
+    <a href="/poly/url3">url3</a>
+    <a href="/poly/url4">url4</a>
+    <hr />
+    <h3 th:text="${message}">Message</h3>
+    <hr />
+    <!-- show user-info when 'user' exists, otherwise show login -->
+    <div th:if="${@auth.authenticated}">
+      <div th:replace="~{user-info}"></div>
+    </div>
+    <div th:if="${!@auth.authenticated}">
+      <div th:replace="~{login}"></div>
+    </div>
+  </body>
+</html>

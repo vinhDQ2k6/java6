@@ -1,0 +1,10 @@
+<div th:switch="${@auth.authenticated}">
+	<div th:case="false">
+		<p>No user information available.</p>
+	</div>
+	<div th:case="true">
+		<p><strong>Name:</strong> <span th:text="${@auth.username}">Name</span></p>
+		<p><strong>Roles:</strong> <span th:text="${@auth.roles}">Roles</span></p>
+		<p th:if="${@auth.hasAnyRole('ADMIN')}"><a href="#">ADMIN</a></p>
+	</div>
+</div>
