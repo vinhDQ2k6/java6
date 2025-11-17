@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>RESTful Web API Client</title>
+		<style>
+			body {
+				font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+				margin: 0;
+				padding: 1rem;
+				background: #f7f9fc;
+				color: #1f2937;
+			}
+			header {
+				margin-bottom: 1rem;
+			}
+			h1 {
+				margin: 0 0 0.25rem 0;
+			}
+			.hint {
+				color: #6b7280;
+				font-size: 0.9rem;
+			}
+			.toolbar {
+				margin: 0.75rem 0;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+			}
+			.toolbar button {
+				padding: 0.45rem 0.7rem;
+				border-radius: 6px;
+				border: none;
+				background: #4b5563;
+				color: white;
+				cursor: pointer;
+				font-weight: 500;
+				font-size: 0.85rem;
+			}
+			.toolbar button.primary {
+				background: #0b69ff;
+			}
+			.toolbar button.danger {
+				background: #dc2626;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: 1.1fr 1.3fr;
+				gap: 1rem;
+			}
+			.card {
+				background: #fff;
+				border: 1px solid #e6eef6;
+				border-radius: 8px;
+				padding: 1rem;
+				box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+			}
+			label {
+				display: block;
+				margin-bottom: 0.25rem;
+				font-weight: 600;
+				font-size: 0.9rem;
+			}
+			input[type="text"],
+			select,
+			textarea {
+				width: 100%;
+				padding: 0.5rem;
+				border: 1px solid #d1e3f8;
+				border-radius: 6px;
+				font: inherit;
+				resize: vertical;
+			}
+			textarea {
+				min-height: 110px;
+				font-family: monospace;
+				font-size: 0.9rem;
+			}
+			.row {
+				display: flex;
+				gap: 0.5rem;
+				align-items: center;
+			}
+			.row + .row {
+				margin-top: 0.5rem;
+			}
+			.btn-main {
+				padding: 0.55rem 0.9rem;
+				border-radius: 6px;
+				border: none;
+				background: #0b69ff;
+				color: white;
+				cursor: pointer;
+				font-weight: 600;
+			}
+			.btn-secondary {
+				padding: 0.55rem 0.9rem;
+				border-radius: 6px;
+				border: none;
+				background: #e5e7eb;
+				color: #111827;
+				cursor: pointer;
+				font-weight: 500;
+			}
+			.btn-main:disabled {
+				opacity: 0.6;
+				cursor: not-allowed;
+			}
+			pre {
+				background: #0b1320;
+				color: #e6f2ff;
+				padding: 1rem;
+				border-radius: 6px;
+				overflow: auto;
+				max-height: 420px;
+				font-family: monospace;
+				font-size: 0.9rem;
+				margin: 0;
+			}
+			.meta {
+				display: flex;
+				gap: 0.5rem;
+				margin-top: 0.5rem;
+				flex-wrap: wrap;
+			}
+			.badge {
+				background: #eef6ff;
+				border: 1px solid #d2e7ff;
+				padding: 0.2rem 0.5rem;
+				border-radius: 6px;
+				font-weight: 600;
+				font-size: 0.8rem;
+			}
+			.status-line {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 0.5rem;
+			}
+			.status-text {
+				font-size: 0.9rem;
+			}
+			.btn-small {
+				padding: 0.3rem 0.7rem;
+				border-radius: 6px;
+				border: none;
+				background: #10b981;
+				color: white;
+				cursor: pointer;
+				font-size: 0.8rem;
+				font-weight: 500;
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<h1>RESTful Web API Client</h1>
+			<p class="hint">
+				Firebase base: <code>https://java6lab4-eb61b-default-rtdb.asia-southeast1.firebasedatabase.app</code>.
+				Collection: <code>/students</code>
+			</p>
+			<div class="toolbar">
+				<button class="primary" onclick="doGetAll()">Get All Students</button>
+				<button onclick="doGetByKey()">Get Student By Key</button>
+				<button onclick="doPost()">Create (POST)</button>
+				<button onclick="doPut()">Replace (PUT)</button>
+				<button class="danger" onclick="doDelete()">Delete</button>
+			</div>
+		</header>
+		<main>
+			<section class="card">
+				<div class="status-line">
+					<div>
+						<strong id="status" class="status-text">Status: -</strong>
+						<span id="statusText" class="hint"></span>
+					</div>
+					<button id="pretty" class="btn-small">Pretty JSON</button>
+				</div>
+
+				<div>
+					<label>Response Body</label>
+					<pre id="res-body">-</pre>
+				</div>
+			</section>
+		</main>
+
+		<script>
+			// --- Base config for Firebase students collection ---
+			const FIREBASE_BASE = "https://java6lab4-eb61b-default-rtdb.asia-southeast1.firebasedatabase.app";
+			const STUDENTS_COLLECTION = FIREBASE_BASE + "/students";
+
+			const el = (id) => document.getElementById(id);
+
+			function setResponse(status, statusText, body) {
+				el("status").textContent = "Status: " + status;
+				el("statusText").textContent = statusText || "";
+				el("res-body").textContent = body || "-";
+			}
+
+			el("pretty").addEventListener("click", () => {
+				const text = el("res-body").textContent;
+				try {
+					const json = JSON.parse(text);
+					el("res-body").textContent = JSON.stringify(json, null, 2);
+				} catch (e) {
+					alert("Response is not valid JSON");
+				}
+			});
+
+			// --- Helper functions similar to your original snippet ---
+
+			// GET all items (students.json)
+			function doGetAll() {
+				fetch(STUDENTS_COLLECTION + ".json")
+					.then((resp) =>
+						resp.json().then((data) => {
+							setResponse(resp.status, resp.statusText, JSON.stringify(data, null, 2));
+						})
+					)
+					.catch((err) => setResponse("ERR", "", String(err)));
+			}
+
+			// GET one item by key
+			function doGetByKey() {
+				const key = prompt("Enter student key (child id):");
+				if (!key) return;
+				fetch(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json")
+					.then((resp) =>
+						resp.json().then((data) => {
+							setResponse(resp.status, resp.statusText, JSON.stringify(data, null, 2));
+						})
+					)
+					.catch((err) => setResponse("ERR", "", String(err)));
+			}
+
+			// POST (create) a new student
+			function doPost() {
+				const input = prompt('Enter JSON object to create (e.g. {"name":"A","marks":10}):');
+				if (!input) return;
+				try {
+					JSON.parse(input);
+				} catch (_) {
+					alert("Invalid JSON");
+					return;
+				}
+				fetch(STUDENTS_COLLECTION + ".json", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: input
+				})
+					.then((resp) =>
+						resp.json().then((data) => {
+							setResponse(
+								resp.status,
+								resp.statusText,
+								JSON.stringify({ message: "Created", id: data.name }, null, 2)
+							);
+						})
+					)
+					.catch((err) => setResponse("ERR", "", String(err)));
+			}
+
+			// PUT (replace) by key
+			function doPut() {
+				const key = prompt("Enter student key (child id) to replace:");
+				if (!key) return;
+				const input = prompt("Enter JSON object to save at this key:");
+				if (!input) return;
+				try {
+					JSON.parse(input);
+				} catch (_) {
+					alert("Invalid JSON");
+					return;
+				}
+				fetch(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json", {
+					method: "PUT",
+					headers: { "Content-Type": "application/json" },
+					body: input
+				})
+					.then((resp) =>
+						resp.json().then((data) => {
+							setResponse(
+								resp.status,
+								resp.statusText,
+								JSON.stringify({ message: "Replaced", data: data }, null, 2)
+							);
+						})
+					)
+					.catch((err) => setResponse("ERR", "", String(err)));
+			}
+
+			// DELETE by key
+			function doDelete() {
+				const key = prompt("Enter student key (child id) to delete:");
+				if (!key) return;
+				if (!confirm("Delete /students/" + key + " ?")) return;
+				fetch(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json", {
+					method: "DELETE"
+				})
+					.then((resp) => {
+						setResponse(
+							resp.status,
+							resp.statusText,
+							JSON.stringify({ message: "Deleted", key: key }, null, 2)
+						);
+					})
+					.catch((err) => setResponse("ERR", "", String(err)));
+			}
+
+			// Initial state: prepare a default GET all
+			(function init() {
+				doGetAll();
+			})();
+		</script>
+	</body>
+</html>

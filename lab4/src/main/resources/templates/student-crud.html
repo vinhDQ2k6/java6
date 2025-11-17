@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+	<head>
+		<meta charset="utf-8" />
+		<title>Quản Lý Sinh Viên (Firebase)</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<style>
+			body {
+				font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+				margin: 0;
+				padding: 1rem;
+				background: #f7f9fc;
+				color: #111827;
+			}
+			h3 {
+				margin-top: 0;
+			}
+			.card {
+				background: #fff;
+				border: 1px solid #e5e7eb;
+				border-radius: 8px;
+				padding: 1rem;
+				max-width: 800px;
+				margin: 0 auto;
+				box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+			}
+			label {
+				display: inline-block;
+				width: 110px;
+				font-weight: 600;
+			}
+			input[type="text"],
+			input[type="number"] {
+				padding: 0.35rem 0.5rem;
+				border-radius: 4px;
+				border: 1px solid #d1d5db;
+				width: 220px;
+			}
+			.row {
+				margin: 0.35rem 0;
+			}
+			.actions {
+				margin: 0.75rem 0;
+				display: flex;
+				gap: 0.5rem;
+				flex-wrap: wrap;
+			}
+			button {
+				padding: 0.45rem 0.9rem;
+				border-radius: 4px;
+				border: none;
+				cursor: pointer;
+				font-weight: 600;
+				font-size: 0.9rem;
+			}
+			button.primary {
+				background: #2563eb;
+				color: white;
+			}
+			button.warning {
+				background: #f59e0b;
+				color: white;
+			}
+			button.danger {
+				background: #dc2626;
+				color: white;
+			}
+			button.secondary {
+				background: #e5e7eb;
+				color: #111827;
+			}
+			table {
+				width: 100%;
+				border-collapse: collapse;
+				margin-top: 0.75rem;
+				font-size: 0.9rem;
+			}
+			th,
+			td {
+				border: 1px solid #e5e7eb;
+				padding: 0.35rem 0.4rem;
+				text-align: left;
+			}
+			th {
+				background: #f3f4f6;
+			}
+			tr:hover {
+				background: #f9fafb;
+			}
+			.badge {
+				display: inline-block;
+				padding: 0.1rem 0.4rem;
+				border-radius: 999px;
+				font-size: 0.75rem;
+				font-weight: 600;
+			}
+			.badge-male {
+				background: #dbeafe;
+				color: #1d4ed8;
+			}
+			.badge-female {
+				background: #fce7f3;
+				color: #be185d;
+			}
+			.small {
+				font-size: 0.8rem;
+				color: #6b7280;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="card">
+			<h3>QUẢN LÝ SINH VIÊN</h3>
+			<p class="small">
+				Dữ liệu lưu tại Firebase Realtime Database:
+				<code>https://java6lab4-eb61b-default-rtdb.asia-southeast1.firebasedatabase.app/students</code>
+			</p>
+
+			<div>
+				<div class="row">
+					<label for="id">Id:</label>
+					<input id="id" type="text" />
+				</div>
+				<div class="row">
+					<label for="name">Full Name:</label>
+					<input id="name" type="text" />
+				</div>
+				<div class="row">
+					<label for="mark">Everage Mark:</label>
+					<input id="mark" type="number" step="0.1" />
+				</div>
+				<div class="row">
+					<label>Gender:</label>
+					<label><input id="male" name="gender" type="radio" value="true" /> Male</label>
+					<label style="margin-left: 0.75rem"
+						><input id="female" name="gender" type="radio" value="false" /> Female</label
+					>
+				</div>
+			</div>
+
+			<hr />
+
+			<div class="actions">
+				<button class="primary" onclick="$api.create()">Create</button>
+				<button class="warning" onclick="$api.update()">Update</button>
+				<button class="danger" onclick="$api.delete()">Delete</button>
+				<button class="secondary" onclick="$api.reset()">Reset</button>
+				<button class="secondary" onclick="$api.loadAll()">Reload</button>
+			</div>
+
+			<hr />
+
+			<table>
+				<thead>
+					<tr>
+						<th>Id</th>
+						<th>Name</th>
+						<th>Mark</th>
+						<th>Gender</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody id="students-body">
+					<!-- rows here -->
+				</tbody>
+			</table>
+		</div>
+
+		<script>
+			const BASE_URL = "https://java6lab4-eb61b-default-rtdb.asia-southeast1.firebasedatabase.app/students";
+
+			const $api = {
+				async loadAll() {
+					try {
+						const res = await fetch(BASE_URL + ".json");
+						if (!res.ok) throw new Error("HTTP " + res.status);
+						const data = (await res.json()) || {};
+						const tbody = document.getElementById("students-body");
+						tbody.innerHTML = "";
+						Object.entries(data).forEach(([key, sv]) => {
+							const tr = document.createElement("tr");
+							tr.innerHTML = `
+              <td>${key}</td>
+              <td>${sv.name ?? ""}</td>
+              <td>${sv.mark ?? ""}</td>
+              <td>
+                <span class="badge ${sv.gender ? "badge-male" : "badge-female"}">${sv.gender ? "Male" : "Female"}</span>
+              </td>
+              <td><button type="button" onclick="$api.edit('${key}')">Edit</button></td>
+            `;
+							tbody.appendChild(tr);
+						});
+					} catch (e) {
+						alert("Load failed: " + e);
+						console.error(e);
+					}
+				},
+
+				getForm() {
+					const id = document.getElementById("id").value.trim();
+					const name = document.getElementById("name").value.trim();
+					const markStr = document.getElementById("mark").value.trim();
+					const genderMale = document.getElementById("male").checked;
+					const genderFemale = document.getElementById("female").checked;
+					const gender = genderMale ? true : genderFemale ? false : null;
+					return { id, name, mark: markStr ? Number(markStr) : null, gender };
+				},
+
+				validate(sv, requireId = true) {
+					if (requireId && !sv.id) {
+						alert("Id is required");
+						return false;
+					}
+					if (!sv.name) {
+						alert("Name is required");
+						return false;
+					}
+					if (sv.mark == null || isNaN(sv.mark)) {
+						alert("Mark is required");
+						return false;
+					}
+					if (sv.gender === null) {
+						alert("Gender is required");
+						return false;
+					}
+					return true;
+				},
+
+				async create() {
+					const sv = this.getForm();
+					if (!this.validate(sv, false)) return;
+					try {
+						const res = await fetch(BASE_URL + ".json", {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ name: sv.name, mark: sv.mark, gender: sv.gender })
+						});
+						if (!res.ok) throw new Error("HTTP " + res.status);
+						alert("Created successfully");
+						this.reset();
+						this.loadAll();
+					} catch (e) {
+						alert("Create failed: " + e);
+						console.error(e);
+					}
+				},
+
+				async update() {
+					const sv = this.getForm();
+					if (!this.validate(sv, true)) return;
+					try {
+						const res = await fetch(BASE_URL + "/" + encodeURIComponent(sv.id) + ".json", {
+							method: "PUT",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ name: sv.name, mark: sv.mark, gender: sv.gender })
+						});
+						if (!res.ok) throw new Error("HTTP " + res.status);
+						alert("Updated successfully");
+						this.reset();
+						this.loadAll();
+					} catch (e) {
+						alert("Update failed: " + e);
+						console.error(e);
+					}
+				},
+
+				async delete() {
+					const id = document.getElementById("id").value.trim();
+					if (!id) {
+						alert("Enter Id to delete");
+						return;
+					}
+					if (!confirm('Delete student with id "' + id + '" ?')) return;
+					try {
+						const res = await fetch(BASE_URL + "/" + encodeURIComponent(id) + ".json", {
+							method: "DELETE"
+						});
+						if (!res.ok) throw new Error("HTTP " + res.status);
+						alert("Deleted successfully");
+						this.reset();
+						this.loadAll();
+					} catch (e) {
+						alert("Delete failed: " + e);
+						console.error(e);
+					}
+				},
+
+				reset() {
+					document.getElementById("id").value = "";
+					document.getElementById("name").value = "";
+					document.getElementById("mark").value = "";
+					document.getElementById("male").checked = false;
+					document.getElementById("female").checked = false;
+				},
+
+				edit(id) {
+					const row = Array.from(document.querySelectorAll("#students-body tr")).find(
+						(tr) => tr.firstElementChild.textContent === id
+					);
+					if (!row) return;
+					const name = row.children[1].textContent;
+					const mark = row.children[2].textContent;
+					const genderText = row.children[3].innerText.trim();
+					document.getElementById("id").value = id;
+					document.getElementById("name").value = name;
+					document.getElementById("mark").value = mark;
+					if (genderText === "Male") {
+						document.getElementById("male").checked = true;
+					} else {
+						document.getElementById("female").checked = true;
+					}
+				}
+			};
+
+			// load data initially
+			$api.loadAll();
+		</script>
+	</body>
+</html>
