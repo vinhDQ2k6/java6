@@ -208,109 +208,91 @@
 				}
 			});
 
-			// --- Helper functions similar to your original snippet ---
+			const RestClient = {
+				request(url, method = "GET", body = null) {
+					const options = { method };
+					if (body) {
+						options.body = body;
+						options.headers = { "Content-Type": "application/json" };
+					}
 
-			// GET all items (students.json)
-			function doGetAll() {
-				fetch(STUDENTS_COLLECTION + ".json")
-					.then((resp) =>
-						resp.json().then((data) => {
-							setResponse(resp.status, resp.statusText, JSON.stringify(data, null, 2));
+					fetch(url, options)
+						.then((resp) => {
+							// Handle 204 No Content or empty responses gracefully
+							if (resp.status === 204) {
+								setResponse(resp.status, resp.statusText, "No Content");
+								return;
+							}
+
+							resp.text().then((text) => {
+								let displayBody = text;
+								try {
+									// Try to format if it's JSON
+									const json = JSON.parse(text);
+									displayBody = JSON.stringify(json, null, 2);
+								} catch (e) {
+									// Not JSON, keep as text
+								}
+								setResponse(resp.status, resp.statusText, displayBody);
+							});
 						})
-					)
-					.catch((err) => setResponse("ERR", "", String(err)));
-			}
+						.catch((err) => setResponse("ERR", "", String(err)));
+				},
 
-			// GET one item by key
-			function doGetByKey() {
-				const key = prompt("Enter student key (child id):");
-				if (!key) return;
-				fetch(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json")
-					.then((resp) =>
-						resp.json().then((data) => {
-							setResponse(resp.status, resp.statusText, JSON.stringify(data, null, 2));
-						})
-					)
-					.catch((err) => setResponse("ERR", "", String(err)));
-			}
+				getAll() {
+					this.request(STUDENTS_COLLECTION + ".json");
+				},
 
-			// POST (create) a new student
-			function doPost() {
-				const input = prompt('Enter JSON object to create (e.g. {"name":"A","marks":10}):');
-				if (!input) return;
-				try {
-					JSON.parse(input);
-				} catch (_) {
-					alert("Invalid JSON");
-					return;
+				getByKey() {
+					const key = prompt("Enter student key (child id):");
+					if (!key) return;
+					this.request(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json");
+				},
+
+				post() {
+					const input = prompt('Enter JSON object to create (e.g. {"name":"A","marks":10}):');
+					if (!input) return;
+					try {
+						JSON.parse(input);
+					} catch (_) {
+						alert("Invalid JSON");
+						return;
+					}
+					this.request(STUDENTS_COLLECTION + ".json", "POST", input);
+				},
+
+				put() {
+					const key = prompt("Enter student key (child id) to replace:");
+					if (!key) return;
+					const input = prompt("Enter JSON object to save at this key:");
+					if (!input) return;
+					try {
+						JSON.parse(input);
+					} catch (_) {
+						alert("Invalid JSON");
+						return;
+					}
+					this.request(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json", "PUT", input);
+				},
+
+				delete() {
+					const key = prompt("Enter student key (child id) to delete:");
+					if (!key) return;
+					if (!confirm("Delete /students/" + key + " ?")) return;
+					this.request(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json", "DELETE");
 				}
-				fetch(STUDENTS_COLLECTION + ".json", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: input
-				})
-					.then((resp) =>
-						resp.json().then((data) => {
-							setResponse(
-								resp.status,
-								resp.statusText,
-								JSON.stringify({ message: "Created", id: data.name }, null, 2)
-							);
-						})
-					)
-					.catch((err) => setResponse("ERR", "", String(err)));
-			}
+			};
 
-			// PUT (replace) by key
-			function doPut() {
-				const key = prompt("Enter student key (child id) to replace:");
-				if (!key) return;
-				const input = prompt("Enter JSON object to save at this key:");
-				if (!input) return;
-				try {
-					JSON.parse(input);
-				} catch (_) {
-					alert("Invalid JSON");
-					return;
-				}
-				fetch(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json", {
-					method: "PUT",
-					headers: { "Content-Type": "application/json" },
-					body: input
-				})
-					.then((resp) =>
-						resp.json().then((data) => {
-							setResponse(
-								resp.status,
-								resp.statusText,
-								JSON.stringify({ message: "Replaced", data: data }, null, 2)
-							);
-						})
-					)
-					.catch((err) => setResponse("ERR", "", String(err)));
-			}
-
-			// DELETE by key
-			function doDelete() {
-				const key = prompt("Enter student key (child id) to delete:");
-				if (!key) return;
-				if (!confirm("Delete /students/" + key + " ?")) return;
-				fetch(STUDENTS_COLLECTION + "/" + encodeURIComponent(key) + ".json", {
-					method: "DELETE"
-				})
-					.then((resp) => {
-						setResponse(
-							resp.status,
-							resp.statusText,
-							JSON.stringify({ message: "Deleted", key: key }, null, 2)
-						);
-					})
-					.catch((err) => setResponse("ERR", "", String(err)));
-			}
+			// Expose functions globally for the buttons
+			window.doGetAll = () => RestClient.getAll();
+			window.doGetByKey = () => RestClient.getByKey();
+			window.doPost = () => RestClient.post();
+			window.doPut = () => RestClient.put();
+			window.doDelete = () => RestClient.delete();
 
 			// Initial state: prepare a default GET all
 			(function init() {
-				doGetAll();
+				RestClient.getAll();
 			})();
 		</script>
 	</body>

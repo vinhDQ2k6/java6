@@ -170,11 +170,16 @@
 			const BASE_URL = "https://java6lab4-eb61b-default-rtdb.asia-southeast1.firebasedatabase.app/students";
 
 			const $api = {
+				state: {
+					students: {}
+				},
+
 				async loadAll() {
 					try {
 						const res = await fetch(BASE_URL + ".json");
 						if (!res.ok) throw new Error("HTTP " + res.status);
 						const data = (await res.json()) || {};
+						this.state.students = data; // Store data in state
 						const tbody = document.getElementById("students-body");
 						tbody.innerHTML = "";
 						Object.entries(data).forEach(([key, sv]) => {
@@ -228,19 +233,45 @@
 
 				async create() {
 					const sv = this.getForm();
-					if (!this.validate(sv, false)) return;
+					// For Firebase, if we want to use a custom ID (from input), we use PUT to that ID.
+					// If we use POST, Firebase generates a random ID.
+					// The UI implies the user provides the ID, so we should check if it exists or use PUT.
+					// However, the original code used POST to base URL which generates a random ID, ignoring the input ID?
+					// Wait, the original create() used POST to BASE_URL.json. This ignores the 'id' input field and lets Firebase generate one.
+					// But the table shows the key.
+					// If the user wants to specify ID, we should use PUT to BASE_URL/id.json.
+					// Let's stick to the previous behavior (POST) but maybe warn if ID is ignored?
+					// Actually, looking at the previous code:
+					// body: JSON.stringify({ name: sv.name, mark: sv.mark, gender: sv.gender })
+					// It didn't send the ID. So the ID input was useless for Create.
+					// Let's improve this: If ID is provided, use it (PUT). If not, let Firebase generate it (POST).
+
+					if (!sv.name || !sv.mark || sv.gender === null) {
+						alert("Please fill in Name, Mark and Gender");
+						return;
+					}
+
 					try {
-						const res = await fetch(BASE_URL + ".json", {
-							method: "POST",
+						let url = BASE_URL + ".json";
+						let method = "POST";
+
+						if (sv.id) {
+							// User provided an ID, so we use PUT to create/overwrite at that specific ID
+							url = BASE_URL + "/" + encodeURIComponent(sv.id) + ".json";
+							method = "PUT";
+						}
+
+						const res = await fetch(url, {
+							method: method,
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify({ name: sv.name, mark: sv.mark, gender: sv.gender })
 						});
 						if (!res.ok) throw new Error("HTTP " + res.status);
-						alert("Created successfully");
+						alert("Saved successfully");
 						this.reset();
 						this.loadAll();
 					} catch (e) {
-						alert("Create failed: " + e);
+						alert("Save failed: " + e);
 						console.error(e);
 					}
 				},
@@ -287,6 +318,7 @@
 
 				reset() {
 					document.getElementById("id").value = "";
+					document.getElementById("id").disabled = false; // Re-enable ID
 					document.getElementById("name").value = "";
 					document.getElementById("mark").value = "";
 					document.getElementById("male").checked = false;
@@ -294,17 +326,14 @@
 				},
 
 				edit(id) {
-					const row = Array.from(document.querySelectorAll("#students-body tr")).find(
-						(tr) => tr.firstElementChild.textContent === id
-					);
-					if (!row) return;
-					const name = row.children[1].textContent;
-					const mark = row.children[2].textContent;
-					const genderText = row.children[3].innerText.trim();
+					const sv = this.state.students[id];
+					if (!sv) return;
+
 					document.getElementById("id").value = id;
-					document.getElementById("name").value = name;
-					document.getElementById("mark").value = mark;
-					if (genderText === "Male") {
+					document.getElementById("id").disabled = true; // Disable ID so user knows they are editing this specific record
+					document.getElementById("name").value = sv.name;
+					document.getElementById("mark").value = sv.mark;
+					if (sv.gender) {
 						document.getElementById("male").checked = true;
 					} else {
 						document.getElementById("female").checked = true;
