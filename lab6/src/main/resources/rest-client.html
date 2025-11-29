@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+
+	<body ng-app="my-app" ng-controller="my-ctrl">
+		<a ng-click="ctrl.invoke('url0')" href>URL 0</a> : <a ng-click="ctrl.invoke('url1')" href>URL 1</a> :
+		<a ng-click="ctrl.invoke('url2')" href>URL 2</a> : <a ng-click="ctrl.invoke('url3')" href>URL 3</a> :
+		<a ng-click="ctrl.invoke('url4')" href>URL 4</a>
+		<hr />
+		<div>
+			<p>Username: <input ng-model="auth.user.username" /></p>
+			<p>Password: <input ng-model="auth.user.password" /></p>
+			<hr />
+			<button ng-click="auth.login()">Login</button>
+		</div>
+
+		<script>
+			var app = angular.module("my-app", []);
+
+			app.controller("my-ctrl", function ($http, $scope, $rootScope) {
+				$rootScope.auth = {
+					user: {
+						username: "user@gmail.com",
+						password: "123"
+					},
+					setToken(token) {
+						//var token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyQGdtYWlsLmNvbSIsImlhdCI6MTcyMjc1OTgxNSwiZXhwIjoxNzIyNzYxNjE1fQ.d1k2u_30Ch_qWfbFGduyYufbOdM5hHj3w_sA6ApVu-0";
+						$http.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+					},
+					login() {
+						var url = "http://localhost:8080/poly/login";
+						$http
+							.post(url, angular.copy(this.user))
+							.then((resp) => {
+								this.setToken(resp.data.token);
+								console.log("success", resp.data);
+							})
+							.catch((error) => {
+								console.log("error", error);
+							});
+					}
+				};
+
+				$scope.ctrl = {
+					invoke(url) {
+						$http
+							.get(`http://localhost:8080/poly/${url}`)
+							.then((resp) => {
+								console.log("success", resp.data);
+							})
+							.catch((error) => {
+								console.log("error", error);
+							});
+					}
+				};
+			});
+		</script>
+	</body>
+</html>
