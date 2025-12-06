@@ -11,7 +11,7 @@ public class DriverManager {
     WebDriverManager.chromedriver().setup();
     ChromeOptions options = new ChromeOptions();
     options.addArguments("--start-maximized");
-    // options.addArguments("--headless"); // Uncomment to run in headless mode
+    options.addArguments("--headless"); // Uncomment to run in headless mode
     return new ChromeDriver(options);
   }
 }
