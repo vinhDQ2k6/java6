@@ -3,6 +3,7 @@ package com.sof3062.lab7.infrastructure.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Date;
@@ -14,9 +15,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtUtil {
 
-  private static final Key SECRET_KEY = Keys.secretKeyFor(
-    SignatureAlgorithm.HS256
-  );
+  // Use a fixed secret key (at least 256 bits / 32 bytes)
+  // This is a sample key. In production, store this in environment variables.
+  private static final String SECRET =
+    "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
+
+  private Key getSignInKey() {
+    byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+    return Keys.hmacShaKeyFor(keyBytes);
+  }
+
   private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
 
   public String generateToken(String username) {
@@ -30,7 +38,7 @@ public class JwtUtil {
       .setSubject(subject)
       .setIssuedAt(new Date(System.currentTimeMillis()))
       .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-      .signWith(SECRET_KEY)
+      .signWith(getSignInKey(), SignatureAlgorithm.HS256)
       .compact();
   }
 
@@ -54,7 +62,7 @@ public class JwtUtil {
 
   private Claims extractAllClaims(String token) {
     return Jwts.parserBuilder()
-      .setSigningKey(SECRET_KEY)
+      .setSigningKey(getSignInKey())
       .build()
       .parseClaimsJws(token)
       .getBody();

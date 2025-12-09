@@ -37,4 +37,40 @@ public class CatalogController {
       return ResponseEntity.badRequest().body(e.getMessage());
     }
   }
+
+  @PutMapping("/categories/{id}")
+  public ResponseEntity<?> updateCategory(
+    @PathVariable Long id,
+    @RequestBody Category category
+  ) {
+    try {
+      return ResponseEntity.ok(catalogService.updateCategory(id, category));
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    }
+  }
+
+  @DeleteMapping("/categories/{id}")
+  public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+    catalogService.deleteCategory(id);
+    return ResponseEntity.ok().build();
+  }
+
+  @PutMapping("/products/{id}")
+  public ResponseEntity<?> updateProduct(
+    @PathVariable Long id,
+    @RequestBody Product product
+  ) {
+    try {
+      return ResponseEntity.ok(catalogService.updateProduct(id, product));
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest().body(e.getMessage());
+    }
+  }
+
+  @DeleteMapping("/products/{id}")
+  public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    catalogService.deleteProduct(id);
+    return ResponseEntity.ok().build();
+  }
 }

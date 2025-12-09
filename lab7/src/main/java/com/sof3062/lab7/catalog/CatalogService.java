@@ -33,4 +33,31 @@ public class CatalogService {
   public List<Product> getProductsByCategory(Long categoryId) {
     return productDAO.findByCategoryId(categoryId);
   }
+
+  public Category updateCategory(Long id, Category category) {
+    if (categoryDAO.findById(id).isEmpty()) {
+      throw new RuntimeException("Category not found");
+    }
+    category.setId(id);
+    return categoryDAO.save(category);
+  }
+
+  public void deleteCategory(Long id) {
+    categoryDAO.delete(id);
+  }
+
+  public Product updateProduct(Long id, Product product) {
+    if (productDAO.findById(id).isEmpty()) {
+      throw new RuntimeException("Product not found");
+    }
+    if (categoryDAO.findById(product.getCategoryId()).isEmpty()) {
+      throw new RuntimeException("Category not found");
+    }
+    product.setId(id);
+    return productDAO.save(product);
+  }
+
+  public void deleteProduct(Long id) {
+    productDAO.delete(id);
+  }
 }
